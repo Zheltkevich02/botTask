@@ -82,6 +82,17 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DataBase\ApplicationConnection.cs" />
+    <Compile Include="DataBase\Tables\Comment.cs" />
+    <Compile Include="DataBase\Tables\Notify.cs" />
+    <Compile Include="DataBase\Tables\Project.cs" />
+    <Compile Include="DataBase\Tables\ProjectRole.cs" />
+    <Compile Include="DataBase\Tables\Setting.cs" />
+    <Compile Include="DataBase\Tables\SettingsUser.cs" />
+    <Compile Include="DataBase\Tables\Status.cs" />
+    <Compile Include="DataBase\Tables\Task.cs" />
+    <Compile Include="DataBase\Tables\TaskUser.cs" />
+    <Compile Include="DataBase\Tables\User.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -115,6 +126,7 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

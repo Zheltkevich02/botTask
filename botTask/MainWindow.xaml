@@ -5,8 +5,82 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:botTask"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="botTask" Height="450" Width="700" FontFamily="Times New Roman" WindowStartupLocation="CenterScreen">
+    <Grid Background="#FF1E1D27">
+
+        <Grid x:Name="MainGrid">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1*"></RowDefinition>
+                <RowDefinition Height="6*"></RowDefinition>
+                <RowDefinition Height="1*"></RowDefinition>
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0">
+                <Button x:Name="BSettings" HorizontalAlignment="Left" Margin="25,5,0,5" Width="100" Background="#FF1A1A1A" Content="Настройки" Foreground="White"></Button>
+            </Grid>
+            <Grid Grid.Row="1">
+                <TabControl Background="#FF2C2B3A" Margin="25,0,25,0" FontSize="14">
+                    <TabItem Header="Консоль" Background="#FF8481AB" Foreground="Black" IsSelected="False">
+                        <ListView x:Name="LVLog" Background="#FF2C2B3A" Foreground="White"/>
+                    </TabItem>
+                    <TabItem Header="Пользователи" Background="#FF8481AB" Foreground="Black" IsSelected="False">
+                        <ListView x:Name="LVUsers" Background="#FF2C2B3A" Foreground="White"/>
+                    </TabItem>
+                </TabControl>
+            </Grid>
+            <Grid Grid.Row="2">
+                <Button x:Name="BConnect" HorizontalAlignment="Left" Margin="25,5,0,5" Width="150" Background="#FF1A1A1A" Content="Включить" Foreground="White"></Button>
+                <Label HorizontalAlignment="Left" Foreground="#FFD43434" Content="Бот отключен" VerticalAlignment="Center" FontSize="18" FontWeight="Bold" Margin="200,0,0,0"/>
+            </Grid>
+        </Grid>
         
+        <Grid x:Name="KeyGrid" Visibility="Hidden">  <!--Грид для авторизации(ввод ключа)-->
+            <Border HorizontalAlignment="Center" VerticalAlignment="Center" Width="400" Height="160" Background="White">
+                <Border.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="10"></Setter>
+                    </Style>
+                </Border.Resources>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*"></RowDefinition>
+                        <RowDefinition Height="4*"></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="HelloText" Grid.Row="0" Text="Первый запуск" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="18"/>
+                    <Grid Grid.Row="1">
+                        <Label HorizontalAlignment="Left" VerticalAlignment="Top" Margin="15,30,0,0" FontSize="14" Content="Ключ бота" ></Label>
+                        <TextBox x:Name="DealerKeyBox" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="15,60,0,0" Width="350" Height="20">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                    <Style.Resources>
+                                        <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                            <VisualBrush.Visual>
+                                                <Label Content="Пример: 6042812345:MjUlaQkJuxEewKlagz0mMQL5tqx7-ZgU" Foreground="LightGray" />
+                                            </VisualBrush.Visual>
+                                        </VisualBrush>
+                                    </Style.Resources>
+                                    <Style.Triggers>
+                                        <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                            <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                        </Trigger>
+                                        <Trigger Property="Text" Value="{x:Null}">
+                                            <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                        </Trigger>
+                                        <Trigger Property="IsKeyboardFocused" Value="True">
+                                            <Setter Property="Background" Value="White" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+                        <Button x:Name="ConnectButton" VerticalAlignment="Bottom" Margin="0,0,36,15" HorizontalAlignment="Right" Content="Продолжить" Width="100" Background="#FF313131" Foreground="White" FontWeight="Bold"></Button>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <Grid.Background>
+                <SolidColorBrush Color="Black" Opacity="0.4"/>
+            </Grid.Background>
+
+        </Grid>
     </Grid>
 </Window>
