@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ namespace botTask.DataBase.Tables
 {
     public class Status
     {
+        [Key]
         public int IDStatus { get; set; }
 
         private string StatusName;

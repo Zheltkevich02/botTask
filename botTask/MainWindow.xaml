@@ -15,7 +15,7 @@
                 <RowDefinition Height="1*"></RowDefinition>
             </Grid.RowDefinitions>
             <Grid Grid.Row="0">
-                <Button x:Name="BSettings" HorizontalAlignment="Left" Margin="25,5,0,5" Width="100" Background="#FF1A1A1A" Content="Настройки" Foreground="White"></Button>
+                <Button x:Name="BSettings" HorizontalAlignment="Left" Margin="25,5,0,5" Width="100" Background="#FF1A1A1A" Content="Настройки" Foreground="White" Click="BSettings_Click"></Button>
             </Grid>
             <Grid Grid.Row="1">
                 <TabControl Background="#FF2C2B3A" Margin="25,0,25,0" FontSize="14">
@@ -30,6 +30,21 @@
             <Grid Grid.Row="2">
                 <Button x:Name="BConnect" HorizontalAlignment="Left" Margin="25,5,0,5" Width="150" Background="#FF1A1A1A" Content="Включить" Foreground="White"></Button>
                 <Label HorizontalAlignment="Left" Foreground="#FFD43434" Content="Бот отключен" VerticalAlignment="Center" FontSize="18" FontWeight="Bold" Margin="200,0,0,0"/>
+            </Grid>
+        </Grid>
+
+        <Grid x:Name="GSettings" Visibility="Hidden">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1*"></RowDefinition>
+                <RowDefinition Height="7*"></RowDefinition>
+                <RowDefinition Height="1*"></RowDefinition>
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="1" Grid.Column="1" Margin="25,0,25,0">
+                <Grid HorizontalAlignment="Left" Width="200" Height="150" Background="#FF1A1A1A" VerticalAlignment="Top" Margin="0,5,0,0">
+                    <Label Foreground="White" FontWeight="Bold" Content="Настройки" Margin="10,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"></Label>
+
+                    <Label x:Name="LVersion" Foreground="White" Content="version" Margin="10,0,0,5" HorizontalAlignment="Left" VerticalAlignment="Bottom" FontSize="9"/>
+                </Grid>
             </Grid>
         </Grid>
         
@@ -48,7 +63,7 @@
                     <TextBlock x:Name="HelloText" Grid.Row="0" Text="Первый запуск" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="18"/>
                     <Grid Grid.Row="1">
                         <Label HorizontalAlignment="Left" VerticalAlignment="Top" Margin="15,30,0,0" FontSize="14" Content="Ключ бота" ></Label>
-                        <TextBox x:Name="DealerKeyBox" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="15,60,0,0" Width="350" Height="20">
+                        <TextBox x:Name="TBKey" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="15,60,0,0" Width="350" Height="20">
                             <TextBox.Style>
                                 <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
                                     <Style.Resources>
@@ -72,13 +87,13 @@
                                 </Style>
                             </TextBox.Style>
                         </TextBox>
-                        <Button x:Name="ConnectButton" VerticalAlignment="Bottom" Margin="0,0,36,15" HorizontalAlignment="Right" Content="Продолжить" Width="100" Background="#FF313131" Foreground="White" FontWeight="Bold"></Button>
+                        <Button x:Name="ConnectButton" VerticalAlignment="Bottom" Margin="0,0,36,15" HorizontalAlignment="Right" Content="Продолжить" Width="100" Background="#FF313131" Foreground="White" FontWeight="Bold" Click="ConnectButton_Click"></Button>
                     </Grid>
                 </Grid>
             </Border>
 
             <Grid.Background>
-                <SolidColorBrush Color="Black" Opacity="0.4"/>
+                <SolidColorBrush Color="Black" Opacity="0.8"/>
             </Grid.Background>
 
         </Grid>

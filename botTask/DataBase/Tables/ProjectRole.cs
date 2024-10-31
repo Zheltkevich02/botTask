@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ namespace botTask.DataBase.Tables
 {
     public class ProjectRole
     {
+        [Key]
         public int IDProjectRole { get; set; }
         public int IDUser { get; set; }
         public int IDProject { get; set; }

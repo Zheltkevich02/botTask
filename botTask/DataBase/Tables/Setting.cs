@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,6 +9,8 @@ namespace botTask.DataBase.Tables
 {
     public class Setting
     {
+        [Key]
+        public int IDSettings {  get; set; }
         public int Ver { get; set; }
 
         private string TelegramKey;
