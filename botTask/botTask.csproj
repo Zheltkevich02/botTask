@@ -97,6 +97,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="BotClass.cs" />
     <Compile Include="DataBase\ApplicationConnection.cs" />
     <Compile Include="DataBase\Tables\Comment.cs" />
     <Compile Include="DataBase\Tables\Notify.cs" />
@@ -109,6 +110,8 @@
     <Compile Include="DataBase\Tables\TaskUser.cs" />
     <Compile Include="DataBase\Tables\User.cs" />
     <Compile Include="GlobalSettings.cs" />
+    <Compile Include="Log\LogClass.cs" />
+    <Compile Include="Log\LogWindowClass.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

@@ -9,7 +9,7 @@ using Task = botTask.DataBase.Tables.Task;
 
 namespace botTask.DataBase
 {
-    internal class ApplicationConnection : DbContext
+    public class ApplicationConnection : DbContext
     {
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Notify> Notifies { get; set; }

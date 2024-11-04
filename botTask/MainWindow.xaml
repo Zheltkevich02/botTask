@@ -6,6 +6,30 @@
         xmlns:local="clr-namespace:botTask"
         mc:Ignorable="d"
         Title="botTask" Height="450" Width="700" FontFamily="Times New Roman" WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <Style x:Key="AnimBlock">
+            <Style.Triggers>
+                <EventTrigger RoutedEvent="Mouse.MouseEnter">
+                    <EventTrigger.Actions>
+                        <BeginStoryboard>
+                            <Storyboard Storyboard.TargetProperty="(TextBlock.Opacity)">
+                                <DoubleAnimation To="0.5" Duration="0:0:0:0.2"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger.Actions>
+                </EventTrigger>
+                <EventTrigger RoutedEvent="Mouse.MouseLeave">
+                    <EventTrigger.Actions>
+                        <BeginStoryboard>
+                            <Storyboard Storyboard.TargetProperty="(TextBlock.Opacity)">
+                                <DoubleAnimation To="1" Duration="0:0:0:0.2"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger.Actions>
+                </EventTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
     <Grid Background="#FF1E1D27">
 
         <Grid x:Name="MainGrid">
@@ -20,7 +44,21 @@
             <Grid Grid.Row="1">
                 <TabControl Background="#FF2C2B3A" Margin="25,0,25,0" FontSize="14">
                     <TabItem Header="Консоль" Background="#FF8481AB" Foreground="Black" IsSelected="False">
-                        <ListView x:Name="LVLog" Background="#FF2C2B3A" Foreground="White"/>
+                        <ListView x:Name="LVLog" Background="#FF2C2B3A" Foreground="White">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Width="Auto">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1*"></ColumnDefinition>
+                                            <ColumnDefinition Width="1*"></ColumnDefinition>
+                                            <ColumnDefinition Width="1*"></ColumnDefinition>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{Binding DateLog}" TextWrapping="Wrap" MinWidth="170" MaxWidth="170" Loaded="TextBlock_Loaded_1"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap" MinWidth="390" HorizontalAlignment="Left" MaxWidth="390" Loaded="TextBlock_Loaded"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
                     </TabItem>
                     <TabItem Header="Пользователи" Background="#FF8481AB" Foreground="Black" IsSelected="False">
                         <ListView x:Name="LVUsers" Background="#FF2C2B3A" Foreground="White"/>
@@ -28,8 +66,8 @@
                 </TabControl>
             </Grid>
             <Grid Grid.Row="2">
-                <Button x:Name="BConnect" HorizontalAlignment="Left" Margin="25,5,0,5" Width="150" Background="#FF1A1A1A" Content="Включить" Foreground="White"></Button>
-                <Label HorizontalAlignment="Left" Foreground="#FFD43434" Content="Бот отключен" VerticalAlignment="Center" FontSize="18" FontWeight="Bold" Margin="200,0,0,0"/>
+                <Button x:Name="BConnect" HorizontalAlignment="Left" Margin="25,5,0,5" Width="150" Background="#FF1A1A1A" Content="Включить" Foreground="White" Click="BConnect_Click" ClickMode="Press"></Button>
+                <Label x:Name="LStatusBot" Style="{DynamicResource AnimBlock}" HorizontalAlignment="Left" Foreground="#FFD43434" Content="Бот отключен" VerticalAlignment="Center" FontSize="18" FontWeight="Bold" Margin="200,0,0,0" Background="{x:Null}" MouseDown="LStatusBot_MouseDown"/>
             </Grid>
         </Grid>
 
