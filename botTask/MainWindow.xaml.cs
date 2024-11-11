@@ -37,13 +37,13 @@ namespace botTask
 
             if (!CheckKey())                                        //проверка наличия ключа.
             {
-              KeyGrid.Visibility = Visibility.Visible;  
+                KeyGrid.Visibility = Visibility.Visible;              //вывод окна для ввода Telegram ключа.
             }
 
-            LVersion.Content = "v"+GlobalSettings.version;     
+            LVersion.Content = "v" + GlobalSettings.version;
             SetVersion();                                           //Проверяем и подставляем версию
 
-            if(!Directory.Exists(GlobalSettings.pathDoc))           //Проверка папки в документах, для лога.
+            if (!Directory.Exists(GlobalSettings.pathDoc))           //Проверка папки в документах, для лога.
             {
                 Directory.CreateDirectory(GlobalSettings.pathDoc);
             }
@@ -58,7 +58,7 @@ namespace botTask
             var settings = AC.Settings.ToList();
             if (settings.Count != 0)
             {
-                if(settings[0].telegramKey.Length > 0)
+                if (settings[0].telegramKey.Length > 0)
                 {
                     GlobalSettings.telegramKey = settings[0].telegramKey;
                     return true;
@@ -77,7 +77,7 @@ namespace botTask
             var settings = AC.Settings.ToList();
             if (settings.Count != 0)
             {
-                if (settings[0].Ver>GlobalSettings.version)
+                if (settings[0].Ver > GlobalSettings.version)
                 {
                     MessageBox.Show("Вы открыли старую версию программы", GlobalSettings.nameApplication, MessageBoxButton.OK, MessageBoxImage.Error);
                     Environment.Exit(0);
@@ -123,7 +123,7 @@ namespace botTask
                         AC.Settings.Add(setting);
                     }
                     AC.SaveChanges();
-                    
+
                     return true;
                 }
                 else
@@ -176,6 +176,40 @@ namespace botTask
             }
         }
 
+        public async System.Threading.Tasks.Task<int> CreateProject(string name, string tgid)
+        {
+            try
+            {
+                var user = AC.Users.Where(c=>c.tgChatID ==tgid).FirstOrDefault();
+
+                Project project = new Project()
+                {
+                    dateCreate = DateTime.Now,
+                    nameProject = name,
+                    status = 0,
+                };
+                AC.Projects.Add(project);
+                var idproject = await AC.SaveChangesAsync();
+
+                ProjectRole projectRole = new ProjectRole()
+                {
+                    IDUser = user.IDUser,
+                    IDProject = project.IDProject,
+                    role = "Создатель"
+                };
+                AC.ProjectRoles.Add(projectRole);
+                await AC.SaveChangesAsync();
+
+                return project.IDProject;
+            }
+            catch (Exception ex)
+            {
+                // Обработка ошибок, если что-то пошло не так
+                WriteLog("Ошибка при создании проекта - " + name + ": " + ex.Message);
+                return -1;
+            }
+        }
+
         public void WriteLog(string text)
         {
             string path = GlobalSettings.pathDoc + "\\LogBot.txt";
@@ -187,8 +221,7 @@ namespace botTask
             {
                 w.WriteLine(text);
             }
-        }
-
+        } 
         public void MainTelegramBotConnect()
         {
             if(!GlobalSettings.BotConnect)
