@@ -44,9 +44,12 @@ namespace botTask
                 var callBack = update.CallbackQuery;
                 if (message != null)
                 {
-                    if (message.Text == "/start")
+                    if (message.Text == "/start" || message.Text == "📋 Главное меню")
                     {
                         await client.SendTextMessageAsync(message.Chat.Id, "Добро пожаловать в botTask!\nВыберите категории.", replyMarkup: GenerateStartButton());
+
+                        var curMes = await client.SendTextMessageAsync(message.Chat.Id, "🛠 Все кнопки успешно обновлены!", replyMarkup: GetMainReply());
+
                         await window.CheckUser(message.Chat.Id.ToString(), message.From.Username);
                         return;
                     }
@@ -62,6 +65,11 @@ namespace botTask
                         {
                             int idproject = await window.CreateProject(name, message.Chat.Id.ToString());
                             if(idproject == -1) { return; }
+                            else
+                            {
+                                await GetProjectList(client, message.Chat.Id, "Проект успешно создан!\n\n");
+                                return;
+                            }
 
                         }
                     }
@@ -90,8 +98,14 @@ namespace botTask
                     }
                     if(callBack.Data == "&myprojectlist")
                     {
-                        await client.SendTextMessageAsync(callBack.From.Id, "Ваш список проектов.", replyMarkup: GenerateMyProject(callBack.From.Id.ToString()));
+                        await GetProjectList(client, callBack.From.Id);
                         return;
+                    }
+                    if(callBack.Data.Contains("&listProject;"))
+                    {
+                        int idProject = Convert.ToInt32(callBack.Data.Split(';')[1]);
+
+                        await SendInfoZakaz(client, callBack.From.Id, idProject);
                     }
                 }
                 else
@@ -106,11 +120,35 @@ namespace botTask
             }
         }
 
+        public async Task SendInfoZakaz(ITelegramBotClient client, long id, int idProject)
+        {
+            string mes="";
+            var project = window.AC.Projects.Where(c => c.IDProject == idProject).FirstOrDefault();
+
+            mes += $"Проект №{project.IDProject}\n";
+            mes += $"<b>{project.nameProject}</b>";
+            mes += "\n";
+            mes += $"{project.discription}"; 
+            if (project.discription != "") mes += "\n";
+            mes += $"🗓 Дата создания проекта: {project.dateCreate}";
+
+            await client.SendTextMessageAsync(id, mes, replyMarkup: GenerateMenuProjectButton(), parseMode: Telegram.Bot.Types.Enums.ParseMode.Html);
+            return;
+        }
+
         Task ErrorBot(ITelegramBotClient client, Exception exception, CancellationToken token)
         {
             return Task.CompletedTask;
         }
 
+        public async Task GetProjectList(ITelegramBotClient client, long chatID, string mainText="")
+        {
+            await client.SendTextMessageAsync(chatID, mainText + "Ваш список проектов.", replyMarkup: GenerateMyProject(chatID.ToString()));
+            return;
+        }
+        //------------------------------------------------------------------------------------------------------------------
+        //------------------------------------------------------------------------------------------------------------------
+        //------------------------------------------------------------------------------------------------------------------
         public InlineKeyboardMarkup GenerateStartButton()
         {
             var keyboard = new InlineKeyboardMarkup(new List<InlineKeyboardButton[]>()
@@ -134,6 +172,31 @@ namespace botTask
             });
             return keyboard;
         }
+
+        public InlineKeyboardMarkup GenerateMenuProjectButton()
+        {
+            var keyboard = new InlineKeyboardMarkup(new List<InlineKeyboardButton[]>()
+            {
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("🗒 Список задач","&mytasklist"),
+                },
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("👥 Участники", "&projectUsers"),
+                },
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("📝 Редактировать проект", "&editProject"),
+                },
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("🗳 Удалить проект", "&delProject"),
+                },
+            });
+            return keyboard;
+        }
+
         public InlineKeyboardMarkup GenerateCreateProjectButton()
         {
             var keyboard = new InlineKeyboardMarkup(new List<InlineKeyboardButton[]>()
@@ -165,14 +228,26 @@ namespace botTask
             foreach (var role in projectRole)
             {
                 var project = window.AC.Projects.Where(c=>c.IDProject==role.IDProject).FirstOrDefault();
-                rows.Add(
-                    new[]
-                    {
+                if (project != null)
+                {
+                    rows.Add(
+                        new[]
+                        {
                         InlineKeyboardButton.WithCallbackData(project.nameProject,"&listProject;"+project.IDProject),
-                    }
-                );
+                        }
+                    );
+                }
             }
             return rows.ToArray();
+        }
+
+        public ReplyKeyboardMarkup GetMainReply()
+        {
+            var reply = new ReplyKeyboardMarkup(new KeyboardButton("📋 Главное меню"))
+            {
+                ResizeKeyboard = true
+            };
+            return reply;
         }
     }
 }
