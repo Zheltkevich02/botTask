@@ -186,6 +186,7 @@ namespace botTask
                 {
                     dateCreate = DateTime.Now,
                     nameProject = name,
+                    discription = "",
                     status = 0,
                 };
                 AC.Projects.Add(project);
@@ -207,6 +208,62 @@ namespace botTask
                 // Обработка ошибок, если что-то пошло не так
                 WriteLog("Ошибка при создании проекта - " + name + ": " + ex.Message);
                 return -1;
+            }
+        }
+
+        public async System.Threading.Tasks.Task<bool> EditNameProject(int idProject,string name)
+        {
+            try
+            {
+                var Project = AC.Projects.Where(c=>c.IDProject==idProject).FirstOrDefault();
+                Project.nameProject = name;
+                await AC.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Обработка ошибок, если что-то пошло не так
+                WriteLog("Ошибка при редактировании наименования проекта - " + name + ": " + ex.Message);
+                return false;
+            }
+        }
+
+        public async System.Threading.Tasks.Task<bool> EditDisProject(int idProject, string dis)
+        {
+            try
+            {
+                var Project = AC.Projects.Where(c => c.IDProject == idProject).FirstOrDefault();
+                Project.discription = dis;
+                await AC.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Обработка ошибок, если что-то пошло не так
+                WriteLog("Ошибка при редактировании описания проекта - " + dis + ": " + ex.Message);
+                return false;
+            }
+        }
+
+        public async System.Threading.Tasks.Task<string> DelProject(int idProject)
+        {
+            try
+            {
+                string name;
+                var Project = AC.Projects.Where(c => c.IDProject == idProject).FirstOrDefault();
+                name = Project.nameProject;
+                AC.Projects.Remove(Project);
+                await AC.SaveChangesAsync();
+
+                return name;
+            }
+            catch (Exception ex)
+            {
+                // Обработка ошибок, если что-то пошло не так
+                WriteLog("Ошибка при удалении проекта - " + ex.Message);
+                return "";
             }
         }
 

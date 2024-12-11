@@ -98,6 +98,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="BotClass.cs" />
+    <Compile Include="ChatClass.cs" />
     <Compile Include="DataBase\ApplicationConnection.cs" />
     <Compile Include="DataBase\Tables\Comment.cs" />
     <Compile Include="DataBase\Tables\Notify.cs" />

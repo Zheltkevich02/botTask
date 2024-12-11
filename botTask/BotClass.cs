@@ -15,9 +15,11 @@ namespace botTask
         private MainWindow window;
         public CancellationTokenSource cts;
         public TelegramBotClient Bot;
+        public List<ChatClass> chatClass;
         public BotClass(MainWindow _window)
         {
             window = _window;
+            chatClass = new List<ChatClass>();
         }
 
         public string TelegramBotConnect()
@@ -67,15 +69,74 @@ namespace botTask
                             if(idproject == -1) { return; }
                             else
                             {
-                                await GetProjectList(client, message.Chat.Id, "Проект успешно создан!\n\n");
+                                await GetProjectList(client, message.Chat.Id, "🔔 Проект успешно создан!\n\n");
                                 return;
                             }
 
                         }
                     }
+                    else
+                    {
+                        var currentChat = chatClass.Where(c => c.chatID == message.Chat.Id).FirstOrDefault();
+                        if (currentChat != null)
+                        {
+                            if(currentChat.callbackString.Contains("&editNameProject;"))
+                            {
+                                int idProject = Convert.ToInt32(currentChat.callbackString.Split(';')[1]);
+                                
+                                if(await window.EditNameProject(idProject, message.Text) == true)
+                                {
+                                    string mainText = "🔔 Наименование проекта успешно изменено!\n";
+                                    await SendInfoZakaz(client, message.Chat.Id, idProject, mainText);
+                                    return;
+                                }
+                                else
+                                {
+                                    await client.SendTextMessageAsync(message.Chat.Id, "Произошла ошибка, обратитесь к администратору!", replyMarkup: GenerateStartButtonTwo());
+                                    return;
+                                }
+                            }
+                            if(currentChat.callbackString.Contains("&editDisProject;"))
+                            {
+                                int idProject = Convert.ToInt32(currentChat.callbackString.Split(';')[1]);
+
+                                if (await window.EditDisProject(idProject, message.Text) == true)
+                                {
+                                    string mainText = "🔔 Описание проекта успешно изменено!\n";
+                                    await SendInfoZakaz(client, message.Chat.Id, idProject, mainText);
+                                    return;
+                                }
+                                else
+                                {
+                                    await client.SendTextMessageAsync(message.Chat.Id, "Произошла ошибка, обратитесь к администратору!", replyMarkup: GenerateStartButtonTwo());
+                                    return;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            await client.SendTextMessageAsync(message.Chat.Id, "Добро пожаловать в botTask!\nВыберите категории.", replyMarkup: GenerateStartButton());
+
+                            var curMes = await client.SendTextMessageAsync(message.Chat.Id, "🛠 Все кнопки успешно обновлены!", replyMarkup: GetMainReply());
+
+                            await window.CheckUser(message.Chat.Id.ToString(), message.From.Username);
+                            return;
+                        }
+                    }
                 }
                 else if(callBack != null)
                 {
+                    var currentChat = chatClass.Where(c=>c.chatID == callBack.From.Id).FirstOrDefault();
+                    if(currentChat!=null)
+                    {
+                        currentChat.callbackString = callBack.Data;
+                    }
+                    else
+                    {
+                        ChatClass curChat = new ChatClass(callBack.From.Id, callBack.Data);
+                        chatClass.Add(curChat);
+                    }
+
                     if(callBack.Data == "&start")
                     {
                         await client.SendTextMessageAsync(callBack.From.Id, "Добро пожаловать в botTask!\nВыберите категории.", replyMarkup: GenerateStartButton());
@@ -107,6 +168,49 @@ namespace botTask
 
                         await SendInfoZakaz(client, callBack.From.Id, idProject);
                     }
+                    if(callBack.Data.Contains("&editProject;"))
+                    {
+                        string idProject = callBack.Data.Split(';')[1];
+
+                        await client.SendTextMessageAsync(callBack.From.Id, "📝 Выберите категорию", replyMarkup: GenerateEditProjectButton(idProject));
+                        return;
+                    }
+                    if (callBack.Data.Contains("&editNameProject;"))
+                    {
+                        await client.SendTextMessageAsync(callBack.From.Id, "Напишите новое название проекта 👇");
+                        return;
+                    }
+                    if(callBack.Data.Contains("&editDisProject;"))
+                    {
+                        await client.SendTextMessageAsync(callBack.From.Id, "Напишите описание для проекта 👇");
+                        return;
+                    }
+                    if(callBack.Data.Contains("&delProject;"))
+                    {
+                        string idProject = callBack.Data.Split(';')[1];
+
+                        await client.SendTextMessageAsync(callBack.From.Id, "Вы уверены, что хотите удалить проект?", replyMarkup: GenerateDelProjectButton(idProject));
+                        return;
+                    }
+                    if(callBack.Data.Contains("&yesDelProject;"))
+                    {
+                        int idProject = Convert.ToInt32(callBack.Data.Split(';')[1]);
+
+                        string saveName = await window.DelProject(idProject);
+
+                        if (saveName!="")
+                        {
+                            await GetProjectList(client, callBack.From.Id, $"🔔 Проект \"{saveName}\" успешно удален!\n\n");
+                            return;
+                        }
+                        else
+                        {
+                            await client.SendTextMessageAsync(callBack.From.Id, "Произошла ошибка, обратитесь к администратору!", replyMarkup: GenerateStartButtonTwo());
+                            return;
+                        }
+
+                    }
+
                 }
                 else
                 {
@@ -120,19 +224,18 @@ namespace botTask
             }
         }
 
-        public async Task SendInfoZakaz(ITelegramBotClient client, long id, int idProject)
+        public async Task SendInfoZakaz(ITelegramBotClient client, long id, int idProject, string mainText="")
         {
             string mes="";
             var project = window.AC.Projects.Where(c => c.IDProject == idProject).FirstOrDefault();
 
             mes += $"Проект №{project.IDProject}\n";
             mes += $"<b>{project.nameProject}</b>";
-            mes += "\n";
-            mes += $"{project.discription}"; 
-            if (project.discription != "") mes += "\n";
+            mes += "\n\n";
+            if (project.discription != "") mes += $"📒 {project.discription}\n";
             mes += $"🗓 Дата создания проекта: {project.dateCreate}";
 
-            await client.SendTextMessageAsync(id, mes, replyMarkup: GenerateMenuProjectButton(), parseMode: Telegram.Bot.Types.Enums.ParseMode.Html);
+            await client.SendTextMessageAsync(id, mainText+mes, replyMarkup: GenerateMenuProjectButton(project.IDProject.ToString()), parseMode: Telegram.Bot.Types.Enums.ParseMode.Html);
             return;
         }
 
@@ -173,25 +276,61 @@ namespace botTask
             return keyboard;
         }
 
-        public InlineKeyboardMarkup GenerateMenuProjectButton()
+        public InlineKeyboardMarkup GenerateMenuProjectButton(string idProject)
         {
             var keyboard = new InlineKeyboardMarkup(new List<InlineKeyboardButton[]>()
             {
                 new InlineKeyboardButton[]
                 {
-                    InlineKeyboardButton.WithCallbackData("🗒 Список задач","&mytasklist"),
+                    InlineKeyboardButton.WithCallbackData("🗒 Список задач",$"&mytasklist;{idProject}"),
                 },
                 new InlineKeyboardButton[]
                 {
-                    InlineKeyboardButton.WithCallbackData("👥 Участники", "&projectUsers"),
+                    InlineKeyboardButton.WithCallbackData("👥 Участники", $"&projectUsers;{idProject}"),
                 },
                 new InlineKeyboardButton[]
                 {
-                    InlineKeyboardButton.WithCallbackData("📝 Редактировать проект", "&editProject"),
+                    InlineKeyboardButton.WithCallbackData("📝 Редактировать проект", $"&editProject;{idProject}"),
                 },
                 new InlineKeyboardButton[]
                 {
-                    InlineKeyboardButton.WithCallbackData("🗳 Удалить проект", "&delProject"),
+                    InlineKeyboardButton.WithCallbackData("🗳 Удалить проект", $"&delProject;{idProject}"),
+                },
+            });
+            return keyboard;
+        }
+
+        public InlineKeyboardMarkup GenerateDelProjectButton(string idProject)
+        {
+            var keyboard = new InlineKeyboardMarkup(new List<InlineKeyboardButton[]>()
+            {
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("✔️ Да",$"&yesDelProject;{idProject}"),
+                },
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("❌ Нет", $"&noDelProject"),
+                },
+            });
+            return keyboard;
+        }
+
+        public InlineKeyboardMarkup GenerateEditProjectButton(string idProject)
+        {
+            var keyboard = new InlineKeyboardMarkup(new List<InlineKeyboardButton[]>()
+            {
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("Переименовать проект",$"&editNameProject;{idProject}"),
+                },
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("Редактировать описание проекта", $"&editDisProject;{idProject}"),
+                },
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("Указать статус проекта", $"&editStatusProject;{idProject}"),
                 },
             });
             return keyboard;
