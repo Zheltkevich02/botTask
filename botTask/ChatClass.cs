@@ -10,6 +10,7 @@ namespace botTask
     {
         public long chatID { get; set; }
         public string callbackString { get; set; }
+        public int countPageProject { get; set; }
 
         public ChatClass() { }
 

@@ -130,10 +130,12 @@ namespace botTask
                     if(currentChat!=null)
                     {
                         currentChat.callbackString = callBack.Data;
+                        if (callBack.Data.Contains("&myprojectlist")) currentChat.countPageProject = 1;
                     }
                     else
                     {
                         ChatClass curChat = new ChatClass(callBack.From.Id, callBack.Data);
+                        if (callBack.Data.Contains("&myprojectlist")) curChat.countPageProject = 1;
                         chatClass.Add(curChat);
                     }
 
@@ -210,7 +212,18 @@ namespace botTask
                         }
 
                     }
-
+                    if(callBack.Data == "&nextPageProject")
+                    {
+                        currentChat.countPageProject++;
+                        await GetProjectList(client, callBack.From.Id, "", callBack.Message.MessageId);
+                        return;
+                    }
+                    if(callBack.Data == "&prevPageProject")
+                    {
+                        currentChat.countPageProject--;
+                        await GetProjectList(client, callBack.From.Id, "", callBack.Message.MessageId);
+                        return;
+                    }
                 }
                 else
                 {
@@ -244,10 +257,18 @@ namespace botTask
             return Task.CompletedTask;
         }
 
-        public async Task GetProjectList(ITelegramBotClient client, long chatID, string mainText="")
+        public async Task GetProjectList(ITelegramBotClient client, long chatID, string mainText = "", int messageId = 0)
         {
-            await client.SendTextMessageAsync(chatID, mainText + "Ваш список проектов.", replyMarkup: GenerateMyProject(chatID.ToString()));
-            return;
+            if (messageId == 0)
+            {
+                await client.SendTextMessageAsync(chatID, mainText + "Ваш список проектов.", replyMarkup: GenerateMyProject(chatID.ToString()));
+                return;
+            }
+            else
+            {
+                await client.EditMessageTextAsync(chatID, messageId, mainText + "Ваш список проектов.", replyMarkup: GenerateMyProject(chatID.ToString()));
+                return;
+            }
         }
         //------------------------------------------------------------------------------------------------------------------
         //------------------------------------------------------------------------------------------------------------------
@@ -360,13 +381,21 @@ namespace botTask
         }
         public InlineKeyboardMarkup GenerateMyProject(string tgchatid)
         {
+            long chatId=Convert.ToInt32(tgchatid);
             var rows = new List<InlineKeyboardButton[]>();
             var user = window.AC.Users.Where(c => c.tgChatID == tgchatid).FirstOrDefault();
             var projectRole = window.AC.ProjectRoles.Where(c=>c.IDUser==user.IDUser).ToList();
+            var userChat = chatClass.Where(c => c.chatID == chatId).FirstOrDefault();
+
+            int startIndex = (userChat.countPageProject * 5)-5;
+            int endIndex = startIndex + 5;
+            if(projectRole.Count < endIndex) endIndex = projectRole.Count;
+
             
-            foreach (var role in projectRole)
+            for (int i = startIndex; i < endIndex; i++)
             {
-                var project = window.AC.Projects.Where(c=>c.IDProject==role.IDProject).FirstOrDefault();
+                int idProject = projectRole[i].IDProject;
+                var project = window.AC.Projects.Where(c => c.IDProject == idProject).FirstOrDefault();
                 if (project != null)
                 {
                     rows.Add(
@@ -375,6 +404,28 @@ namespace botTask
                         InlineKeyboardButton.WithCallbackData(project.nameProject,"&listProject;"+project.IDProject),
                         }
                     );
+                }
+                if (i+1 == endIndex)
+                {
+                    if (endIndex != projectRole.Count)
+                    {
+                        rows.Add(
+                            new[]
+                            {
+                              InlineKeyboardButton.WithCallbackData("Следующая страница ⏩","&nextPageProject"),
+                            }
+                        );
+                    }
+                    if (userChat.countPageProject > 1)
+                    {
+                        rows.Add(
+                            new[]
+                            {
+                                  InlineKeyboardButton.WithCallbackData("Предыдущая страница ⏪","&prevPageProject"),
+                            }
+                        );
+                    }
+                    break;
                 }
             }
             return rows.ToArray();
