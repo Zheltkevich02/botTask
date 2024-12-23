@@ -18,6 +18,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Xaml;
+using Telegram.Bot.Types;
 
 namespace botTask
 {
@@ -154,7 +155,7 @@ namespace botTask
                 else
                 {
                     // Если пользователь не найден, создаем и добавляем нового
-                    User user = new User()
+                    DataBase.Tables.User user = new DataBase.Tables.User()
                     {
                         nickName = userName,
                         tgChatID = chatID,
@@ -225,6 +226,28 @@ namespace botTask
             {
                 // Обработка ошибок, если что-то пошло не так
                 WriteLog("Ошибка при редактировании наименования проекта - " + name + ": " + ex.Message);
+                return false;
+            }
+        }
+        public async System.Threading.Tasks.Task<bool> AddUserToProject(int idProject, int idUser)
+        {
+            try
+            {
+                ProjectRole projectRole = new ProjectRole()
+                {
+                    IDUser = idUser,
+                    IDProject = idProject,
+                    role = "Участник"
+                };
+                AC.ProjectRoles.Add(projectRole);
+                await AC.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Обработка ошибок, если что-то пошло не так
+                WriteLog("Ошибка при добавлении пользователя к проекту - Номер проекта:" + idProject.ToString() + ". Номер пользователя: "+idUser.ToString()+": " + ex.Message);
                 return false;
             }
         }

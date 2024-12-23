@@ -1,4 +1,5 @@
-﻿using System;
+﻿using botTask.DataBase.Tables;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -38,7 +39,7 @@ namespace botTask
             cts.Cancel();
         }
 
-        public async Task UpdateBot(ITelegramBotClient client, Update update, CancellationToken token)
+        public async System.Threading.Tasks.Task UpdateBot(ITelegramBotClient client, Update update, CancellationToken token)
         {
             try
             {
@@ -46,6 +47,19 @@ namespace botTask
                 var callBack = update.CallbackQuery;
                 if (message != null)
                 {
+                    var currentChatMes = chatClass.Where(c => c.chatID == message.Chat.Id).FirstOrDefault();
+                    if (currentChatMes != null)
+                    {
+                        currentChatMes.callbackString = message.Text;
+                        if (message.Text.Contains("/project")) currentChatMes.countPageProject = 1;
+                    }
+                    else
+                    {
+                        ChatClass curChat = new ChatClass(message.Chat.Id, message.Text);
+                        if (message.Text.Contains("/project")) curChat.countPageProject = 1;
+                        chatClass.Add(curChat);
+                    }
+
                     if (message.Text == "/start" || message.Text == "📋 Главное меню")
                     {
                         await client.SendTextMessageAsync(message.Chat.Id, "Добро пожаловать в botTask!\nВыберите категории.", replyMarkup: GenerateStartButton());
@@ -131,11 +145,15 @@ namespace botTask
                     {
                         currentChat.callbackString = callBack.Data;
                         if (callBack.Data.Contains("&myprojectlist")) currentChat.countPageProject = 1;
+                        if (callBack.Data.Contains("&projectUsers;")) currentChat.countPageProject = 1;
+                        if (callBack.Data.Contains("&addUser")) currentChat.countPageProject = 1;
                     }
                     else
                     {
                         ChatClass curChat = new ChatClass(callBack.From.Id, callBack.Data);
                         if (callBack.Data.Contains("&myprojectlist")) curChat.countPageProject = 1;
+                        if (callBack.Data.Contains("&projectUsers;")) curChat.countPageProject = 1;
+                        if (callBack.Data.Contains("&addUser")) curChat.countPageProject = 1;
                         chatClass.Add(curChat);
                     }
 
@@ -224,6 +242,41 @@ namespace botTask
                         await GetProjectList(client, callBack.From.Id, "", callBack.Message.MessageId);
                         return;
                     }
+                    if(callBack.Data.Contains("&projectUsers;"))
+                    {
+                        int idProject = Convert.ToInt32(callBack.Data.Split(';')[1]);
+                        var user = window.AC.Users.Where(c=>c.tgChatID==callBack.From.Id.ToString()).FirstOrDefault();
+                        var project = window.AC.ProjectRoles.Where(c=>c.IDProject==idProject).Where(x=>x.IDUser==user.IDUser).FirstOrDefault();
+                        if (user!=null && project!=null)
+                        {
+                            if(project.role=="Создатель" || project.role == "Администратор") 
+                            {
+                                await client.EditMessageTextAsync(chatId: callBack.From.Id, messageId: callBack.Message.MessageId, text: "Список участников проекта:", replyMarkup: GenerateUsersProject(idProject, user.IDUser.ToString(), callBack.From.Id.ToString()));
+                                return;
+                            }
+                            else
+                            {
+                                await client.EditMessageTextAsync(chatId: callBack.From.Id, messageId: callBack.Message.MessageId, text: GetListUsers(idProject, user.IDUser.ToString()), replyMarkup: InlineKeyboardButton.WithCallbackData("Закрыть", "&cancel"));
+                                return;
+                            }
+                        }
+                    }
+                    if(callBack.Data.Contains("&addUserList"))
+                    {
+                        int idProject = Convert.ToInt32(callBack.Data.Split(';')[1]);
+
+                        await client.SendTextMessageAsync(chatId: callBack.From.Id, text: "Выберите пользователя: ", replyMarkup: GenerateAllUserList(idProject, callBack.From.Id.ToString()));
+                        return;
+                    }
+                    if(callBack.Data.Contains("&addUser;"))
+                    {
+                        int idProject = Convert.ToInt32(callBack.Data.Split(';')[1]);
+                        int idUser = Convert.ToInt32(callBack.Data.Split(';')[2]);
+
+                        await SendNotifyAddUser(client, idProject, idUser);
+                        return;
+                    }
+
                 }
                 else
                 {
@@ -237,7 +290,7 @@ namespace botTask
             }
         }
 
-        public async Task SendInfoZakaz(ITelegramBotClient client, long id, int idProject, string mainText="")
+        public async System.Threading.Tasks.Task SendInfoZakaz(ITelegramBotClient client, long id, int idProject, string mainText="")
         {
             string mes="";
             var project = window.AC.Projects.Where(c => c.IDProject == idProject).FirstOrDefault();
@@ -252,12 +305,12 @@ namespace botTask
             return;
         }
 
-        Task ErrorBot(ITelegramBotClient client, Exception exception, CancellationToken token)
+        System.Threading.Tasks.Task ErrorBot(ITelegramBotClient client, Exception exception, CancellationToken token)
         {
-            return Task.CompletedTask;
+            return System.Threading.Tasks.Task.CompletedTask;
         }
 
-        public async Task GetProjectList(ITelegramBotClient client, long chatID, string mainText = "", int messageId = 0)
+        public async System.Threading.Tasks.Task GetProjectList(ITelegramBotClient client, long chatID, string mainText = "", int messageId = 0)
         {
             if (messageId == 0)
             {
@@ -270,6 +323,21 @@ namespace botTask
                 return;
             }
         }
+
+        public async System.Threading.Tasks.Task SendNotifyAddUser(ITelegramBotClient client, int idProject, int idUser)
+        {
+            var project = window.AC.Projects.Where(c=>c.IDProject == idProject).FirstOrDefault();
+            var user = window.AC.Users.Where(c=>c.IDUser == idUser).FirstOrDefault();
+
+            string mes = "🛎 Вас добавили в проект!";
+            mes += "\n";
+            mes += "Проект №"; mes += project.IDProject;
+            mes += "\nОписание: "; mes += project.discription;
+
+            await client.SendTextMessageAsync(chatId: user.tgChatID, mes);
+            await window.AddUserToProject(idProject, idUser);
+            return;
+        }
         //------------------------------------------------------------------------------------------------------------------
         //------------------------------------------------------------------------------------------------------------------
         //------------------------------------------------------------------------------------------------------------------
@@ -279,19 +347,19 @@ namespace botTask
             {
                 new InlineKeyboardButton[]
                 {
-                    InlineKeyboardButton.WithCallbackData("Мои проекты","&myprojectlist"),
+                    InlineKeyboardButton.WithCallbackData("📚 Мои проекты","&myprojectlist"),
                 },
                 new InlineKeyboardButton[]
                 {
-                    InlineKeyboardButton.WithCallbackData("Создать проект", "&createproject"),
+                    InlineKeyboardButton.WithCallbackData("📝 Создать проект", "&createproject"),
                 },
                 new InlineKeyboardButton[]
                 {
-                    InlineKeyboardButton.WithCallbackData("Настройки", "&usersettigns"),
+                    InlineKeyboardButton.WithCallbackData("⚙️ Настройки", "&usersettigns"),
                 },
                 new InlineKeyboardButton[]
                 {
-                    InlineKeyboardButton.WithCallbackData("Помощь", "&help"),
+                    InlineKeyboardButton.WithCallbackData("💡 Помощь", "&help"),
                 },
             });
             return keyboard;
@@ -427,8 +495,148 @@ namespace botTask
                     }
                     break;
                 }
+                else if (projectRole.Count <= i + 1)
+                {
+                    break;
+                }
             }
             return rows.ToArray();
+        }
+        public InlineKeyboardMarkup GenerateUsersProject(int idProject, string skipUser, string tgChatId)
+        {
+            var rows = new List<InlineKeyboardButton[]>();
+            var projectRole = window.AC.ProjectRoles.Where(c => c.IDProject == idProject).ToList();
+
+            long chatId = Convert.ToInt32(tgChatId);
+            var userChat = chatClass.Where(c => c.chatID == chatId).FirstOrDefault();
+            int startIndex = (userChat.countPageProject * 5) - 5;
+            int endIndex = startIndex + 5;
+
+            botTask.DataBase.Tables.User user;
+
+            for(int i = startIndex; i < endIndex; i++)
+            {
+                int idProjectRole = projectRole[i].IDUser;
+                user = window.AC.Users.Where(c=>c.IDUser == idProjectRole).FirstOrDefault();
+                if (user != null)
+                {
+                    if (user.IDUser.ToString() == skipUser)
+                    {
+                        rows.Add(
+                            new[]
+                            {
+                        InlineKeyboardButton.WithCallbackData(user.nickName+" - Это вы!","me"),
+                            }
+                        );
+                    }
+                    else
+                    {
+                        rows.Add(
+                            new[]
+                            {
+                        InlineKeyboardButton.WithCallbackData(user.nickName+"("+user.email+")","&userList;"+idProject+";"+user.IDUser),
+                            }
+                        );
+                    }
+                }
+                if (i + 1 == endIndex)
+                {
+                    rows.Add(
+                        new[]
+                        {
+                            InlineKeyboardButton.WithCallbackData("➕ Добавить участника","&addUserList;"+idProject),
+                        }
+                    );
+                    break;
+                }
+                else if (projectRole.Count <= i+1) 
+                {
+                    rows.Add(
+                        new[]
+                        {
+                            InlineKeyboardButton.WithCallbackData("➕ Добавить участника","&addUserList;"+idProject),
+                        }
+                    );
+                    break;
+                }
+            }
+
+            return rows.ToArray();
+        }
+
+        public InlineKeyboardMarkup GenerateAllUserList(int idProject, string tgChatId)
+        {
+            var rows = new List<InlineKeyboardButton[]>();
+            var users = window.AC.Users.ToList();
+
+            long chatId = Convert.ToInt32(tgChatId);
+            var userChat = chatClass.Where(c => c.chatID == chatId).FirstOrDefault();
+            int startIndex = (userChat.countPageProject * 5) - 5;
+            int endIndex = startIndex + 5;
+
+            botTask.DataBase.Tables.User user;
+
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                user = users[i];
+
+                rows.Add(
+                    new[]
+                    {
+                       InlineKeyboardButton.WithCallbackData(user.nickName+"("+user.email+")","&addUser;"+idProject+";"+user.IDUser),
+                    }
+                );
+
+                if (i + 1 == endIndex)
+                {
+                    if (endIndex != users.Count)
+                    {
+                        rows.Add(
+                            new[]
+                            {
+                              InlineKeyboardButton.WithCallbackData("Следующая страница ⏩","&nextPageProject"),
+                            }
+                        );
+                    }
+                    if (userChat.countPageProject > 1)
+                    {
+                        rows.Add(
+                            new[]
+                            {
+                                  InlineKeyboardButton.WithCallbackData("Предыдущая страница ⏪","&prevPageProject"),
+                            }
+                        );
+                    }
+                    break;
+                }
+                else if (users.Count <= i + 1)
+                {
+                    break;
+                }
+            }
+
+            return rows.ToArray();
+        }
+
+        public string GetListUsers(int idProject, string skipUser)
+        {
+            var projectRole = window.AC.ProjectRoles.Where(c => c.IDProject == idProject).ToList();
+            botTask.DataBase.Tables.User user;
+
+            string mes = "Участники учавствующие в проекте: ";
+            mes += "\n\n";
+            foreach (var pj in projectRole)
+            {
+                user = window.AC.Users.Where(c => c.IDUser == pj.IDUser).FirstOrDefault();
+                mes += user.nickName;
+
+                if(user.IDUser.ToString() == skipUser)
+                {
+                    mes += " - Это вы! 😎";
+                }
+                mes += "\n";
+            }
+            return mes;
         }
 
         public ReplyKeyboardMarkup GetMainReply()
