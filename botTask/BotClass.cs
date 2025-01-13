@@ -156,7 +156,7 @@ namespace botTask
                         if (callBack.Data.Contains("&addUser")) curChat.countPageProject = 1;
                         chatClass.Add(curChat);
                     }
-
+                    //-----------------------------------------------------------------------
                     if(callBack.Data == "&start")
                     {
                         await client.SendTextMessageAsync(callBack.From.Id, "Добро пожаловать в botTask!\nВыберите категории.", replyMarkup: GenerateStartButton());
@@ -276,6 +276,13 @@ namespace botTask
                         await SendNotifyAddUser(client, idProject, idUser);
                         return;
                     }
+                    if(callBack.Data.Contains("&mytasklist;"))
+                    {
+                        int idProject = Convert.ToInt32(callBack.Data.Split(';')[1]);
+
+                        await GetTasksList(client, callBack.From.Id, idProject);
+                        return;
+                    }
 
                 }
                 else
@@ -337,6 +344,20 @@ namespace botTask
             await client.SendTextMessageAsync(chatId: user.tgChatID, mes);
             await window.AddUserToProject(idProject, idUser);
             return;
+        }
+
+        public async System.Threading.Tasks.Task GetTasksList(ITelegramBotClient client, long chatID, long projectId, string mainText = "", int messageId = 0)
+        {
+            if(messageId == 0)
+            {
+                await client.SendTextMessageAsync(chatID, "Ваш список задач.", replyMarkup: GenerateMyTasks(chatID.ToString(), projectId));
+                return;
+            }
+            else
+            {
+                await client.EditMessageTextAsync(chatID, messageId, "Ваш список задач.", replyMarkup: GenerateMyTasks(chatID.ToString(), projectId));
+                return;
+            }
         }
         //------------------------------------------------------------------------------------------------------------------
         //------------------------------------------------------------------------------------------------------------------
@@ -458,7 +479,6 @@ namespace botTask
             int startIndex = (userChat.countPageProject * 5)-5;
             int endIndex = startIndex + 5;
             if(projectRole.Count < endIndex) endIndex = projectRole.Count;
-
             
             for (int i = startIndex; i < endIndex; i++)
             {
@@ -496,6 +516,76 @@ namespace botTask
                     break;
                 }
                 else if (projectRole.Count <= i + 1)
+                {
+                    break;
+                }
+            }
+            return rows.ToArray();
+        }
+        public InlineKeyboardMarkup GenerateMyTasks(string tgchatid, long idProject)
+        {
+            long chatId = Convert.ToInt32(tgchatid);
+            var rows = new List<InlineKeyboardButton[]>();
+            var user = window.AC.Users.Where(c => c.tgChatID == tgchatid).FirstOrDefault();
+            var taskList = window.AC.Tasks.Where(c => c.idProject == idProject).ToList();
+            var userChat = chatClass.Where(c => c.chatID == chatId).FirstOrDefault();
+
+            int startIndex = (userChat.countPageProject * 5) - 5;
+            int endIndex = startIndex + 5;
+            if (taskList.Count < endIndex) endIndex = taskList.Count;
+
+            if (endIndex <= 0)
+            {
+                rows.Add(
+                    new[]
+                    {
+                      InlineKeyboardButton.WithCallbackData("Добавить задачу ➕","&addTask"),
+                    }
+                );
+            }
+
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                int idTask = taskList[i].IDTask;
+                var task = window.AC.Tasks.Where(c => c.IDTask == idTask).FirstOrDefault();
+                if (task != null)
+                {
+                    rows.Add(
+                        new[]
+                        {
+                        InlineKeyboardButton.WithCallbackData(task.nameTask,"&listTask;"+task.IDTask),
+                        }
+                    );
+                }
+                if (i + 1 == endIndex)
+                {
+                    if (endIndex != taskList.Count)
+                    {
+                        rows.Add(
+                            new[]
+                            {
+                              InlineKeyboardButton.WithCallbackData("Следующая страница ⏩","&nextPageTask"),
+                            }
+                        );
+                    }
+                    if (userChat.countPageProject > 1)
+                    {
+                        rows.Add(
+                            new[]
+                            {
+                                  InlineKeyboardButton.WithCallbackData("Предыдущая страница ⏪","&prevPageTask"),
+                            }
+                        );
+                    }
+                    rows.Add(
+                            new[]
+                            {
+                                  InlineKeyboardButton.WithCallbackData("Добавить задачу ➕","&addTask"),
+                            }
+                        );
+                    break;
+                }
+                else if (taskList.Count <= i + 1)
                 {
                     break;
                 }
