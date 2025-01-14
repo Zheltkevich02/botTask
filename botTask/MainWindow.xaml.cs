@@ -290,6 +290,32 @@ namespace botTask
             }
         }
 
+        public async System.Threading.Tasks.Task<int> CreateTask(string name, int idProject, string tgid)
+        {
+            try
+            {
+                var project = AC.Projects.Where(c => c.IDProject == idProject).FirstOrDefault();
+
+                DataBase.Tables.Task task = new DataBase.Tables.Task()
+                {
+                    idProject = idProject,
+                    dateCreate = DateTime.Now,
+                    nameTask = name,
+                    discription = "",
+                    status = 1,
+                };
+                AC.Tasks.Add(task);
+                var idTask = await AC.SaveChangesAsync();
+
+                return task.IDTask;
+            }
+            catch (Exception ex)
+            {
+                WriteLog("Ошибка при создании задачи - " + ex.Message);
+                return 0;
+            }
+        }
+
         public void WriteLog(string text)
         {
             string path = GlobalSettings.pathDoc + "\\LogBot.txt";

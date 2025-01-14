@@ -50,8 +50,8 @@ namespace botTask
                     var currentChatMes = chatClass.Where(c => c.chatID == message.Chat.Id).FirstOrDefault();
                     if (currentChatMes != null)
                     {
-                        currentChatMes.callbackString = message.Text;
-                        if (message.Text.Contains("/project")) currentChatMes.countPageProject = 1;
+                        //currentChatMes.callbackString = message.Text;
+                        //if (message.Text.Contains("/project")) currentChatMes.countPageProject = 1;
                     }
                     else
                     {
@@ -126,6 +126,18 @@ namespace botTask
                                     return;
                                 }
                             }
+                            if (currentChat.callbackString.Contains("&addTask;"))
+                            {
+                                int idProject = Convert.ToInt32(currentChat.callbackString.Split(';')[1]);
+
+                                int idtask = await window.CreateTask(message.Text, idProject, message.Chat.Id.ToString());
+                                if (idtask == -1) { return; }
+                                else
+                                {
+                                    await GetTasksList(client, message.Chat.Id, idProject, "🔔 Задача успешно создана!\n\n");
+                                    return;
+                                }
+                            }
                         }
                         else
                         {
@@ -147,6 +159,7 @@ namespace botTask
                         if (callBack.Data.Contains("&myprojectlist")) currentChat.countPageProject = 1;
                         if (callBack.Data.Contains("&projectUsers;")) currentChat.countPageProject = 1;
                         if (callBack.Data.Contains("&addUser")) currentChat.countPageProject = 1;
+                        if (callBack.Data.Contains("&mytasklist;")) currentChat.countPageProject = 1;
                     }
                     else
                     {
@@ -154,6 +167,7 @@ namespace botTask
                         if (callBack.Data.Contains("&myprojectlist")) curChat.countPageProject = 1;
                         if (callBack.Data.Contains("&projectUsers;")) curChat.countPageProject = 1;
                         if (callBack.Data.Contains("&addUser")) curChat.countPageProject = 1;
+                        if (callBack.Data.Contains("&mytasklist;")) curChat.countPageProject = 1;
                         chatClass.Add(curChat);
                     }
                     //-----------------------------------------------------------------------
@@ -283,7 +297,20 @@ namespace botTask
                         await GetTasksList(client, callBack.From.Id, idProject);
                         return;
                     }
+                    if(callBack.Data.Contains("&addTask;"))
+                    {
+                        int idProject = Convert.ToInt32(callBack.Data.Split(';')[1]);
 
+                        await client.SendTextMessageAsync(callBack.From.Id, "Напишите наименование задачи.");
+                        return;
+                    }
+                    if(callBack.Data.Contains("&listTask;"))
+                    {
+                        int idTask = Convert.ToInt32(callBack.Data.Split(';')[1]);
+
+                        await SendInfoTasks(client, callBack.From.Id, idTask);
+                        return;
+                    }
                 }
                 else
                 {
@@ -310,6 +337,24 @@ namespace botTask
 
             await client.SendTextMessageAsync(id, mainText+mes, replyMarkup: GenerateMenuProjectButton(project.IDProject.ToString()), parseMode: Telegram.Bot.Types.Enums.ParseMode.Html);
             return;
+        }
+
+        public async System.Threading.Tasks.Task SendInfoTasks(ITelegramBotClient client, long id, int idTask, string mainText= "")
+        {
+            string mes = "";
+            var task = window.AC.Tasks.Where(c=>c.IDTask == idTask).FirstOrDefault();
+            //var status = window.AC.Statuses.Where(w => w.IDStatus == task.status).FirstOrDefault();
+
+
+            mes += $"Задача №{task.IDTask}\n";
+            mes += $"<b>{task.nameTask}</b>";
+            mes += "\n\n";
+            if (task.discription != "") mes += $"📒 {task.discription}\n";
+            //mes += $"🛠️ Статус: {status.statusName}\n";
+            mes += $"📢 Дедлайн задачи: {task.deadLine}\n\n";
+            mes += $"🗓 Дата создания задачи: {task.dateCreate}\n";
+
+            await client.SendTextMessageAsync(id, mainText + mes, replyMarkup: GenerateMenuTaskButton(task.IDTask.ToString()), parseMode: Telegram.Bot.Types.Enums.ParseMode.Html);
         }
 
         System.Threading.Tasks.Task ErrorBot(ITelegramBotClient client, Exception exception, CancellationToken token)
@@ -350,7 +395,7 @@ namespace botTask
         {
             if(messageId == 0)
             {
-                await client.SendTextMessageAsync(chatID, "Ваш список задач.", replyMarkup: GenerateMyTasks(chatID.ToString(), projectId));
+                await client.SendTextMessageAsync(chatID, mainText+"Ваш список задач.", replyMarkup: GenerateMyTasks(chatID.ToString(), projectId));
                 return;
             }
             else
@@ -405,6 +450,37 @@ namespace botTask
                 new InlineKeyboardButton[]
                 {
                     InlineKeyboardButton.WithCallbackData("🗳 Удалить проект", $"&delProject;{idProject}"),
+                },
+            });
+            return keyboard;
+        }
+        public InlineKeyboardMarkup GenerateMenuTaskButton(string idTask)
+        {
+            var keyboard = new InlineKeyboardMarkup(new List<InlineKeyboardButton[]>()
+            {
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("👥 Исполнители", $"&taskProject;{idTask}"),
+                },
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("📝 Редактировать наименование",$"&taskProject;{idTask}"),
+                },
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("📝 Редактировать дедлайн", $"&taskProject;{idTask}"),
+                },
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("📝 Редактировать описание задачи", $"&taskProject;{idTask}"),
+                },
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("📝 Статус", $"&taskProject;{idTask}"),
+                },
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("🗳 Удалить задачу", $"&taskProject;{idTask}"),
                 },
             });
             return keyboard;
@@ -539,7 +615,7 @@ namespace botTask
                 rows.Add(
                     new[]
                     {
-                      InlineKeyboardButton.WithCallbackData("Добавить задачу ➕","&addTask"),
+                      InlineKeyboardButton.WithCallbackData("➕ Добавить задачу","&addTask;"+idProject),
                     }
                 );
             }
@@ -564,7 +640,7 @@ namespace botTask
                         rows.Add(
                             new[]
                             {
-                              InlineKeyboardButton.WithCallbackData("Следующая страница ⏩","&nextPageTask"),
+                              InlineKeyboardButton.WithCallbackData("Следующая страница ⏩","&nextPageTask;"+idProject),
                             }
                         );
                     }
@@ -573,14 +649,14 @@ namespace botTask
                         rows.Add(
                             new[]
                             {
-                                  InlineKeyboardButton.WithCallbackData("Предыдущая страница ⏪","&prevPageTask"),
+                                  InlineKeyboardButton.WithCallbackData("Предыдущая страница ⏪","&prevPageTask;"+idProject),
                             }
                         );
                     }
                     rows.Add(
                             new[]
                             {
-                                  InlineKeyboardButton.WithCallbackData("Добавить задачу ➕","&addTask"),
+                                  InlineKeyboardButton.WithCallbackData("Добавить задачу ➕","&addTask;"+idProject),
                             }
                         );
                     break;
